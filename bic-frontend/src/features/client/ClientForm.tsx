@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { clientSchema, type ClientFormValues } from "./clientSchema";
 import { clientApi } from "@/api/clientApi";
 
 export function ClientForm() {
+  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<ClientFormValues>({
@@ -34,14 +36,14 @@ export function ClientForm() {
   const identifiantsArray = useFieldArray({ control: form.control, name: "identifiants" });
 
   async function onSubmit(values: ClientFormValues) {
-  setSubmitting(true);
-  try {
-    const client = await clientApi.creer(values);
-    navigate(`/demande/nouvelle/contrat/${client.id}`);
-  } finally {
-    setSubmitting(false);
+    setSubmitting(true);
+    try {
+      const client = await clientApi.creer(values);
+      navigate(`/demande/nouvelle/contrat/${client.id}`);
+    } finally {
+      setSubmitting(false);
+    }
   }
-}
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="mx-auto max-w-3xl space-y-6 p-6">
@@ -60,7 +62,6 @@ export function ClientForm() {
             </Select>
           </div>
 
-          {/* ---- Catégorie Tiers : défaut 0215 - IMF, libellé complet ---- */}
           <div className="space-y-1.5">
             <Label htmlFor="categorieTiersCode">
               Catégorie Tiers <span className="text-red-500">*</span>
@@ -144,7 +145,6 @@ export function ClientForm() {
             <Input {...form.register("paysNaissance")} />
           </div>
 
-          {/* ---- Genre : menu déroulant, vide par défaut ---- */}
           <div className="space-y-1.5">
             <Label htmlFor="genre">Genre <span className="text-red-500">*</span></Label>
             <Select onValueChange={(v) => form.setValue("genre", v as "FEMME" | "HOMME", { shouldValidate: true })}>
