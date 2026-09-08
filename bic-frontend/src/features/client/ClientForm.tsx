@@ -34,14 +34,14 @@ export function ClientForm() {
   const identifiantsArray = useFieldArray({ control: form.control, name: "identifiants" });
 
   async function onSubmit(values: ClientFormValues) {
-    setSubmitting(true);
-    try {
-      const client = await clientApi.creer(values);
-      console.log("Client créé :", client);
-    } finally {
-      setSubmitting(false);
-    }
+  setSubmitting(true);
+  try {
+    const client = await clientApi.creer(values);
+    navigate(`/demande/nouvelle/contrat/${client.id}`);
+  } finally {
+    setSubmitting(false);
   }
+}
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="mx-auto max-w-3xl space-y-6 p-6">
@@ -50,7 +50,7 @@ export function ClientForm() {
         <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Titre</Label>
-            <Select onValueChange={(v) => form.setValue("titre", v)}>
+            <Select onValueChange={(v) => form.setValue("titre", v as string)}>
               <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Mr">Mr</SelectItem>
@@ -67,7 +67,7 @@ export function ClientForm() {
             </Label>
             <Select
               defaultValue="0215"
-              onValueChange={(v) => form.setValue("categorieTiersCode", v, { shouldValidate: true })}
+              onValueChange={(v) => form.setValue("categorieTiersCode", v as string, { shouldValidate: true })}
             >
               <SelectTrigger id="categorieTiersCode">
                 <SelectValue placeholder="Sélectionner" />
@@ -182,7 +182,7 @@ export function ClientForm() {
                 <Label>Type d'adresse <span className="text-red-500">*</span></Label>
                 <Select
                   defaultValue={field.typeAdresse}
-                  onValueChange={(v) => form.setValue(`adresses.${index}.typeAdresse`, v)}
+                  onValueChange={(v) => form.setValue(`adresses.${index}.typeAdresse`, v as string)}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
