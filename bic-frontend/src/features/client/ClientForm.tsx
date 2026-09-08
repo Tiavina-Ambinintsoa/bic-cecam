@@ -4,11 +4,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { clientSchema, type ClientFormValues } from "./clientSchema";
-import { clientApi } from "@/api/ClientApi";
+import { clientApi } from "@/api/clientApi";
 
 export function ClientForm() {
   const [submitting, setSubmitting] = useState(false);
@@ -17,6 +24,7 @@ export function ClientForm() {
     resolver: zodResolver(clientSchema),
     defaultValues: {
       nationalite: "Malgache",
+      categorieTiersCode: "0215",
       adresses: [{ typeAdresse: "Individu - Adresse principale", adresseComplete: "" }],
       identifiants: [{ typeIdentifiant: "CIN", numero: "" }],
     },
@@ -42,7 +50,7 @@ export function ClientForm() {
         <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Titre</Label>
-            <Select onValueChange={(v) => form.setValue("titre", v as string | undefined)}>
+            <Select onValueChange={(v) => form.setValue("titre", v)}>
               <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Mr">Mr</SelectItem>
@@ -52,17 +60,58 @@ export function ClientForm() {
             </Select>
           </div>
 
+          {/* ---- Catégorie Tiers : défaut 0215 - IMF, libellé complet ---- */}
           <div className="space-y-1.5">
-            <Label>Catégorie Tiers <span className="text-red-500">*</span></Label>
-            <Select onValueChange={(v) => form.setValue("categorieTiersCode", v as string)}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+            <Label htmlFor="categorieTiersCode">
+              Catégorie Tiers <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              defaultValue="0215"
+              onValueChange={(v) => form.setValue("categorieTiersCode", v, { shouldValidate: true })}
+            >
+              <SelectTrigger id="categorieTiersCode">
+                <SelectValue placeholder="Sélectionner" />
+              </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0004">0004 - Ménages</SelectItem>
-                <SelectItem value="0011">0011 - Administration centrale</SelectItem>
-                <SelectItem value="0215">0215 - I M F</SelectItem>
-                {/* compléter avec le référentiel complet §6.6 du cahier des charges */}
+                <SelectGroup>
+                  <SelectLabel>Ménages / IMF</SelectLabel>
+                  <SelectItem value="0004">0004 - Ménages</SelectItem>
+                  <SelectItem value="0215">0215 - Institution de Micro-Finance (IMF)</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Administrations publiques</SelectLabel>
+                  <SelectItem value="0001">0001 - Administration publique</SelectItem>
+                  <SelectItem value="0011">0011 - Administration centrale</SelectItem>
+                  <SelectItem value="0019">0019 - NCA (non classé ailleurs)</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Institutions financières</SelectLabel>
+                  <SelectItem value="0002">0002 - Institution financière</SelectItem>
+                  <SelectItem value="0211">0211 - Banque Centrale</SelectItem>
+                  <SelectItem value="0212">0212 - Banques / Établissements de crédit</SelectItem>
+                  <SelectItem value="0213">0213 - Établissements financiers</SelectItem>
+                  <SelectItem value="0214">0214 - Institutions financières spécialisées</SelectItem>
+                  <SelectItem value="0022">0022 - Bureau de change</SelectItem>
+                  <SelectItem value="0231">0231 - Assurances</SelectItem>
+                  <SelectItem value="0023">0023 - Sociétés financières non établissement de crédit</SelectItem>
+                  <SelectItem value="0232">0232 - Autres sociétés financières</SelectItem>
+                  <SelectItem value="0029">0029 - Autres institutions financières</SelectItem>
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>Sociétés non financières</SelectLabel>
+                  <SelectItem value="0003">0003 - Sociétés non financières</SelectItem>
+                  <SelectItem value="0321">0321 - Sociétés non financières privées franches</SelectItem>
+                  <SelectItem value="0322">0322 - Sociétés non financières privées non franches</SelectItem>
+                  <SelectItem value="3221">3221 - Grandes entreprises</SelectItem>
+                  <SelectItem value="3222">3222 - Petites et moyennes entreprises (PME)</SelectItem>
+                  <SelectItem value="3223">3223 - Très petites entreprises (TPE)</SelectItem>
+                  <SelectItem value="0329">0329 - NCA (non classé ailleurs)</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
+            {form.formState.errors.categorieTiersCode && (
+              <p className="text-sm text-red-500">{form.formState.errors.categorieTiersCode.message}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -95,22 +144,18 @@ export function ClientForm() {
             <Input {...form.register("paysNaissance")} />
           </div>
 
-          {/* ---- Champ Genre ---- */}
+          {/* ---- Genre : menu déroulant, vide par défaut ---- */}
           <div className="space-y-1.5">
-            <Label>Genre <span className="text-red-500">*</span></Label>
-            <RadioGroup
-              onValueChange={(v) => form.setValue("genre", v as "FEMME" | "HOMME")}
-              className="flex gap-6 pt-1"
-            >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="FEMME" id="genre-femme" />
-                <Label htmlFor="genre-femme" className="font-normal">Femme</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="HOMME" id="genre-homme" />
-                <Label htmlFor="genre-homme" className="font-normal">Homme</Label>
-              </div>
-            </RadioGroup>
+            <Label htmlFor="genre">Genre <span className="text-red-500">*</span></Label>
+            <Select onValueChange={(v) => form.setValue("genre", v as "FEMME" | "HOMME", { shouldValidate: true })}>
+              <SelectTrigger id="genre">
+                <SelectValue placeholder="Sélectionner" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FEMME">Femme</SelectItem>
+                <SelectItem value="HOMME">Homme</SelectItem>
+              </SelectContent>
+            </Select>
             {form.formState.errors.genre && (
               <p className="text-sm text-red-500">{form.formState.errors.genre.message}</p>
             )}
@@ -137,7 +182,7 @@ export function ClientForm() {
                 <Label>Type d'adresse <span className="text-red-500">*</span></Label>
                 <Select
                   defaultValue={field.typeAdresse}
-                  onValueChange={(v) => form.setValue(`adresses.${index}.typeAdresse`, v as string)}
+                  onValueChange={(v) => form.setValue(`adresses.${index}.typeAdresse`, v)}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
