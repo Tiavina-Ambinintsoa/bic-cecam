@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: bic-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bic_cecam
+    username: bic_user
+    password: change_me
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
