@@ -13,4 +13,4 @@ export const contratSchema = z.object({
 });
 
 export type ContratFormValues = z.infer<typeof contratSchema>;
-export type ContratFormInput = z.input<typeof contratSchema>;   // shape before validation
+export type ContratFormInput = z.input<typeof contratSchema>;

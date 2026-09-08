@@ -3,6 +3,7 @@ package mg.cecam.bic.client;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import mg.cecam.bic.client.dto.ClientRequest;
+import mg.cecam.bic.client.dto.ClientResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,13 +16,62 @@ public class ClientController {
     private final ClientService clientService;
 
     @PostMapping
-    public ResponseEntity<Client> creer(@Valid @RequestBody ClientRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(clientService.creerClient(request));
+    public ResponseEntity<ClientResponse> creer(
+            @Valid @RequestBody ClientRequest request
+    ) {
+        Client client = clientService.creerClient(request);
+
+        ClientResponse response = new ClientResponse(
+                client.getId(),
+                client.getCodeClientCb(),
+                client.getTitre(),
+                client.getCategorieTiersCode(),
+                client.getPrenom(),
+                client.getDeuxiemePrenom(),
+                client.getNom(),
+                client.getDateNaissance(),
+                client.getVilleNaissance(),
+                client.getPaysNaissance(),
+                client.getGenre(),
+                client.getNationalite(),
+                client.getEtatCivil()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
     }
 
     @GetMapping("/recherche")
-    public ResponseEntity<Client> rechercher(@RequestParam String typeIdentifiant, @RequestParam String numero) {
-        Client client = clientService.rechercherParIdentifiant(typeIdentifiant, numero);
-        return client == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(client);
+    public ResponseEntity<ClientResponse> rechercher(
+            @RequestParam String typeIdentifiant,
+            @RequestParam String numero
+    ) {
+        Client client = clientService.rechercherParIdentifiant(
+                typeIdentifiant,
+                numero
+        );
+
+        if (client == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ClientResponse response = new ClientResponse(
+                client.getId(),
+                client.getCodeClientCb(),
+                client.getTitre(),
+                client.getCategorieTiersCode(),
+                client.getPrenom(),
+                client.getDeuxiemePrenom(),
+                client.getNom(),
+                client.getDateNaissance(),
+                client.getVilleNaissance(),
+                client.getPaysNaissance(),
+                client.getGenre(),
+                client.getNationalite(),
+                client.getEtatCivil()
+        );
+
+        return ResponseEntity.ok(response);
     }
 }

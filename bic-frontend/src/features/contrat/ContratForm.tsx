@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { contratSchema, type ContratFormValues } from "./contratSchema";
+import { contratSchema, type ContratFormValues, type ContratFormInput } from "./contratSchema";
 import { contratApi } from "@/api/contratApi";
 import type { ModeRattachement, RoleClient } from "@/types/contrat";
 
@@ -19,7 +19,7 @@ export function ContratForm() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm<ContratFormValues, unknown, ContratFormValues>({
+  const form = useForm<ContratFormInput, unknown, ContratFormValues>({
     resolver: zodResolver(contratSchema),
     defaultValues: {
       modeRattachement: "NOUVELLE_DEMANDE",

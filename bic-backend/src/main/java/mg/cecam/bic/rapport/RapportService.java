@@ -1,0 +1,117 @@
+package mg.cecam.bic.rapport;
+
+import lombok.RequiredArgsConstructor;
+import mg.cecam.bic.client.Adresse;
+import mg.cecam.bic.client.Client;
+import mg.cecam.bic.common.enums.PhaseDemande;
+import mg.cecam.bic.common.util.ScoreColorMapper;
+import mg.cecam.bic.contrat.Contrat;
+import mg.cecam.bic.contrat.ContratRepository;
+import mg.cecam.bic.rapport.dto.*;
+import mg.cecam.bic.score.ScoreResult;
+import mg.cecam.bic.score.ScoreService;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class RapportService {
+
+    private final ContratRepository contratRepository;
+    private final ScoreService scoreService;
+
+    public RapportSolvabiliteResponse construire(Long contratId) {
+        Contrat contrat = contratRepository.findById(contratId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contrat introuvable : " + contratId));
+        Client client = contrat.getClient();
+
+        List<Contrat> tousContrats = contratRepository.findByClient_Id(client.getId());
+        boolean clientTrouve = tousContrats.size() > 1;
+        List<Contrat> historique = tousContrats.stream().filter(c -> !c.getId().equals(contratId)).toList();
+
+        ScoreResult scoreResult = scoreService.calculer(client, contrat);
+
+        List<AdresseDTO> actuelles = client.getAdresses().stream()
+                .filter(Adresse::getActuelle)
+                .map(a -> new AdresseDTO(a.getTypeAdresse(), a.getAdresseComplete()))
+                .toList();
+        List<AdresseDTO> historiques = client.getAdresses().stream()
+                .filter(a -> !a.getActuelle())
+                .map(a -> new AdresseDTO(a.getTypeAdresse(), a.getAdresseComplete()))
+                .toList();
+
+        return new RapportSolvabiliteResponse(
+                UUID.randomUUID().toString(),
+                LocalDateTime.now(),
+                clientTrouve ? "Client trouvé" : "Client Introuvable, Client Nouvellement Créé",
+                client.getCodeClientCb(),
+                toClientInfoDto(client),
+                actuelles,
+                historiques,
+                null,        // Emploi : aucune saisie disponible pour l'instant (cf. cahier des charges §5.4.3)
+                List.of(),   // Liens entre clients : idem
+                toScoreDto(scoreResult),
+                construireSynthese(historique)
+        );
+    }
+
+    private ClientInfoDTO toClientInfoDto(Client c) {
+        return new ClientInfoDTO(
+                c.getTitre(), (c.getPrenom() + " " + c.getNom()).trim(), c.getPrenom(), c.getDeuxiemePrenom(), c.getNom(),
+                c.getDateNaissance(), c.getVilleNaissance(), c.getPaysNaissance(),
+                c.getGenre().name(), c.getNationalite(), c.getEtatCivil(), c.getCategorieTiersCode()
+        );
+    }
+
+    private ScoreDTO toScoreDto(ScoreResult r) {
+        if (!r.calculable()) {
+            return new ScoreDTO(false, null, null, null, null, null, r.message());
+        }
+        return new ScoreDTO(true, r.valeur(), r.intervalle(), r.categorieRisque(), r.couleur(), ScoreColorMapper.toHex(r.couleur()), null);
+    }
+
+    private SyntheseDTO construireSynthese(List<Contrat> historique) {
+        Map<PhaseDemande, Long> parPhase = historique.stream()
+                .collect(Collectors.groupingBy(Contrat::getPhaseDemande, Collectors.counting()));
+
+        RepartitionLigneDTO financementsAvecEcheancier = new RepartitionLigneDTO(
+                "Financements avec Échéancier",
+                parPhase.getOrDefault(PhaseDemande.DEMANDE_EN_COURS, 0L),
+                parPhase.getOrDefault(PhaseDemande.REFUSE, 0L),
+                parPhase.getOrDefault(PhaseDemande.ABANDONNE, 0L),
+                parPhase.getOrDefault(PhaseDemande.ACTIF, 0L),
+                parPhase.getOrDefault(PhaseDemande.FERME, 0L)
+        );
+
+        BigDecimal montantTotalRestantDu = historique.stream()
+                .filter(c -> c.getPhaseDemande() == PhaseDemande.ACTIF)
+                .map(Contrat::getMontantFinance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new SyntheseDTO(
+                historique.size(),
+                0,   // Nombre d'établissements déclarants : nécessite un réseau multi-établissements, non modélisé ici
+                "-",
+                "Ariary malgache",
+                "-",
+                montantTotalRestantDu,
+                BigDecimal.ZERO,
+                historique.size(),
+                BigDecimal.ZERO,
+                List.of(
+                        financementsAvecEcheancier,
+                        new RepartitionLigneDTO("Financements sans Échéancier", 0, 0, 0, 0, 0),
+                        new RepartitionLigneDTO("Cartes de Crédit", 0, 0, 0, 0, 0),
+                        new RepartitionLigneDTO("Services", 0, 0, 0, 0, 0)
+                )
+        );
+    }
+}

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Rapport de solvabilité</title>
+  <style>
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #1e293b; margin: 32px; }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 8px; margin-bottom: 16px; }
+    .title { font-size: 18px; font-weight: bold; color: #0f172a; }
+    .subtitle { font-size: 14px; color: #334155; }
+    .confidentiel { text-align: right; font-size: 9px; color: #64748b; }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; font-weight: bold; color: white; }
+    .section-title { background: #f1f5f9; padding: 6px 10px; font-weight: bold; font-size: 13px; margin-top: 18px; margin-bottom: 8px; color: #0f172a; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    td, th { padding: 4px 6px; font-size: 10.5px; vertical-align: top; }
+    th { text-align: left; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .label { color: #64748b; font-size: 9.5px; }
+    .value { font-weight: 500; }
+    .score-box { display: inline-block; padding: 12px 24px; border-radius: 8px; color: white; font-size: 22px; font-weight: bold; }
+    .footer { margin-top: 24px; font-size: 9px; color: #94a3b8; display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="title">BIC — CECAM</div>
+      <div class="subtitle">RAPPORT DE SOLVABILITÉ</div>
+    </div>
+    <div class="confidentiel">CONFIDENTIEL<br/>Réf. : <span th:text="${r.identifiantRapport}">-</span></div>
+  </div>
+
+  <table>
+    <tr><td class="label">Date de la requête</td><td class="label">Statut</td></tr>
+    <tr>
+      <td class="value" th:text="${#temporals.format(r.dateRequete, 'dd/MM/yyyy HH:mm')}">-</td>
+      <td>
+        <span class="badge" th:style="'background-color:' + (${r.statutClient == 'Client trouvé'} ? '#16a34a' : '#dc2626')"
+              th:text="${r.statutClient}">-</span>
+      </td>
+    </tr>
+  </table>
+
+  <div class="section-title">CLIENT</div>
+  <table>
+    <tr><td class="label">Code Client CB</td><td class="label">Nom complet</td><td class="label">Genre</td><td class="label">Date de naissance</td></tr>
+    <tr>
+      <td class="value" th:text="${r.codeClientCb}">-</td>
+      <td class="value" th:text="${r.client.nomComplet}">-</td>
+      <td class="value" th:text="${r.client.genre == 'FEMME'} ? 'Femme' : 'Homme'">-</td>
+      <td class="value" th:text="${#temporals.format(r.client.dateNaissance, 'dd/MM/yyyy')}">-</td>
+    </tr>
+    <tr><td class="label">Nationalité</td><td class="label">État civil</td><td class="label">Catégorie Tiers</td><td></td></tr>
+    <tr>
+      <td class="value" th:text="${r.client.nationalite}">-</td>
+      <td class="value" th:text="${r.client.etatCivil ?: '-'}">-</td>
+      <td class="value" th:text="${r.client.categorieTiersCode}">-</td>
+      <td></td>
+    </tr>
+  </table>
+
+  <div class="section-title">ADRESSES — Actuelle</div>
+  <table>
+    <tr><th>Type</th><th>Adresse complète</th></tr>
+    <tr th:if="${r.adressesActuelles.isEmpty()}"><td colspan="2">-</td></tr>
+    <tr th:each="a : ${r.adressesActuelles}">
+      <td th:text="${a.typeAdresse}">-</td>
+      <td th:text="${a.adresseComplete}">-</td>
+    </tr>
+  </table>
+  <div th:if="${!r.adressesHistoriques.isEmpty()}">
+    <div class="label">Historique</div>
+    <table>
+      <tr><th>Type</th><th>Adresse complète</th></tr>
+      <tr th:each="a : ${r.adressesHistoriques}">
+        <td th:text="${a.typeAdresse}">-</td>
+        <td th:text="${a.adresseComplete}">-</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section-title">EMPLOI</div>
+  <table><tr><td colspan="4">-</td></tr></table>
+
+  <div class="section-title">LIENS ENTRE LES CLIENTS</div>
+  <table><tr><td colspan="6">-</td></tr></table>
+
+  <div class="section-title">SCORE CB</div>
+  <table>
+    <tr>
+      <td>
+        <div th:if="${r.score.calculable}" class="score-box" th:style="'background-color:' + ${r.score.couleurHex}"
+             th:text="${r.score.valeur} + ' — ' + ${r.score.intervalle}">-</div>
+        <div th:unless="${r.score.calculable}" class="label" th:text="${r.score.message}">-</div>
+      </td>
+      <td class="value" th:if="${r.score.calculable}" th:text="${r.score.categorieRisque}">-</td>
+    </tr>
+  </table>
+
+  <div class="section-title">SYNTHÈSE RAPPORT DE SOLVABILITÉ</div>
+  <table>
+    <tr><th>Total contrats</th><th>Établissements déclarants</th><th>Devise</th><th>Exposition potentielle</th></tr>
+    <tr>
+      <td th:text="${r.synthese.nombreTotalContrat}">0</td>
+      <td th:text="${r.synthese.nombreEtablissementsDeclarants}">0</td>
+      <td th:text="${r.synthese.devise}">-</td>
+      <td th:text="${r.synthese.expositionPotentielle}">-</td>
+    </tr>
+  </table>
+  <table>
+    <tr><th>Catégorie</th><th>Demandé</th><th>Refusé</th><th>Abandonné</th><th>Actif</th><th>Fermé</th></tr>
+    <tr th:each="lig : ${r.synthese.repartition}">
+      <td th:text="${lig.categorie}">-</td>
+      <td th:text="${lig.demande}">0</td>
+      <td th:text="${lig.refuse}">0</td>
+      <td th:text="${lig.abandonne}">0</td>
+      <td th:text="${lig.actif}">0</td>
+      <td th:text="${lig.ferme}">0</td>
+    </tr>
+  </table>
+
+  <div class="footer"><span>RAPPORT DE SOLVABILITÉ — BIC CECAM</span><span>CONFIDENTIEL</span></div>
+</body>
+</html>

@@ -9,9 +9,15 @@ spring:
     username: bic_user
     password: admin123
   jpa:
+    defer-datasource-initialization: true
     hibernate:
       ddl-auto: update
     show-sql: true
     properties:
       hibernate:
-        format_sql: true
+        "[format_sql]": true
+  sql:
+    init:
+      mode: always
+  thymeleaf:
+    cache: false
