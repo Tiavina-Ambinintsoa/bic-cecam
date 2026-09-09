@@ -9,15 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record ContratRequest(
-        @NotNull Long clientId,
-        @NotNull ModeRattachement modeRattachement,
-        @NotNull String typeContrat,
-        String typeRelationEntreprise,
-        @NotNull RoleClient roleClient,
-        @NotNull LocalDate dateDemande,
-        @NotNull @Positive BigDecimal montantFinance,
-        BigDecimal montantEcheanceMensuelle,
-        @NotNull @Positive Integer nombreTotalEcheances,
-        @NotNull String devise,
-        String periodicitePaiement
+        @NotNull Long clientId, @NotNull ModeRattachement modeRattachement, @NotNull String typeContrat,
+        String typeRelationEntreprise, String codeClientCbCible, @NotNull RoleClient roleClient,
+        @NotNull LocalDate dateDemande, @NotNull @Positive BigDecimal montantFinance,
+        BigDecimal montantEcheanceMensuelle, @NotNull @Positive Integer nombreTotalEcheances,
+        @NotNull String devise, String periodicitePaiement
 ) {}

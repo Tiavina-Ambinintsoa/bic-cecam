@@ -23,6 +23,9 @@ public class Contrat {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "code_client_cb_cible")
+private String codeClientCbCible; // renseigné uniquement si modeRattachement = DEMANDE_EXISTANTE
+
     @Column(name = "code_contrat_cb", unique = true, length = 20)
     private String codeContratCb;
 

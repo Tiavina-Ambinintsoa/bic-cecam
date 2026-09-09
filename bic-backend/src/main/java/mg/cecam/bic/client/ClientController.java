@@ -7,6 +7,7 @@ import mg.cecam.bic.client.dto.ClientResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import mg.cecam.bic.client.dto.ClientEnregistrementResponse;
 
 @RestController
 @RequestMapping("/api/clients")
@@ -16,32 +17,10 @@ public class ClientController {
     private final ClientService clientService;
 
     @PostMapping
-    public ResponseEntity<ClientResponse> creer(
-            @Valid @RequestBody ClientRequest request
-    ) {
-        Client client = clientService.creerClient(request);
-
-        ClientResponse response = new ClientResponse(
-                client.getId(),
-                client.getCodeClientCb(),
-                client.getTitre(),
-                client.getCategorieTiersCode(),
-                client.getPrenom(),
-                client.getDeuxiemePrenom(),
-                client.getNom(),
-                client.getDateNaissance(),
-                client.getVilleNaissance(),
-                client.getPaysNaissance(),
-                client.getGenre(),
-                client.getNationalite(),
-                client.getEtatCivil()
-        );
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(response);
-    }
-
+public ResponseEntity<ClientEnregistrementResponse> creer(@Valid @RequestBody ClientRequest request) {
+    ClientEnregistrementResponse result = clientService.enregistrerOuRecuperer(request);
+    return ResponseEntity.status(result.clientTrouve() ? HttpStatus.OK : HttpStatus.CREATED).body(result);
+}       
     @GetMapping("/recherche")
     public ResponseEntity<ClientResponse> rechercher(
             @RequestParam String typeIdentifiant,

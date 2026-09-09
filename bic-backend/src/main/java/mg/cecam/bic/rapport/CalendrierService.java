@@ -10,7 +10,6 @@ import mg.cecam.bic.rapport.dto.CelluleMoisDTO;
 import mg.cecam.bic.rapport.dto.LigneAnneeDTO;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,37 +26,41 @@ public class CalendrierService {
     private final EcheanceRepository echeanceRepository;
 
     public CalendrierCreditDTO construire(Contrat contrat) {
-        List<Echeance> echeances = echeanceRepository.findByContrat_IdOrderByNumeroEcheance(contrat.getId());
-        if (echeances.isEmpty()) {
-            return new CalendrierCreditDTO(contrat.getCodeContratCb(), contrat.getTypeContrat(), contrat.getMontantFinance(), List.of());
-        }
-
-        Map<YearMonth, Echeance> parMois = echeances.stream()
-                .collect(Collectors.toMap(e -> YearMonth.from(e.getDateEcheance()), e -> e));
-
-        YearMonth debut = YearMonth.from(contrat.getDateDemande());
-        YearMonth fin = YearMonth.from(echeances.get(echeances.size() - 1).getDateEcheance());
-
-        List<LigneAnneeDTO> lignes = new ArrayList<>();
-        for (int annee = debut.getYear(); annee <= fin.getYear(); annee++) {
-            List<CelluleMoisDTO> mois = new ArrayList<>();
-            for (int m = 1; m <= 12; m++) {
-                YearMonth courant = YearMonth.of(annee, m);
-                boolean dansPeriode = !courant.isBefore(debut) && !courant.isAfter(fin);
-                Echeance e = parMois.get(courant);
-
-                if (!dansPeriode || e == null) {
-                    mois.add(new CelluleMoisDTO(MOIS_LABELS[m - 1], dansPeriode, null, null, dansPeriode ? "#E2E8F0" : "#FFFFFF"));
-                    continue;
-                }
-
-                boolean ok = e.getStatut() == StatutEcheance.PAYE_A_TEMPS || e.getStatut() == StatutEcheance.A_VENIR;
-                BigDecimal montantAffiche = e.getMontantPaye() != null ? e.getMontantPaye() : e.getMontantDu();
-                mois.add(new CelluleMoisDTO(MOIS_LABELS[m - 1], true, montantAffiche, e.getStatut().name(), ok ? "#4CAF50" : "#E53935"));
-            }
-            lignes.add(new LigneAnneeDTO(annee, mois));
-        }
-
-        return new CalendrierCreditDTO(contrat.getCodeContratCb(), contrat.getTypeContrat(), contrat.getMontantFinance(), lignes);
+    List<Echeance> echeances = echeanceRepository.findByContrat_IdOrderByNumeroEcheance(contrat.getId());
+    if (echeances.isEmpty()) {
+        return new CalendrierCreditDTO(contrat.getCodeContratCb(), contrat.getTypeContrat(), contrat.getMontantFinance(), List.of());
     }
+
+    Map<YearMonth, Echeance> parMois = echeances.stream()
+            .collect(Collectors.toMap(e -> YearMonth.from(e.getDateEcheance()), e -> e));
+
+    YearMonth debut = YearMonth.from(contrat.getDateDemande());
+    YearMonth fin = YearMonth.from(echeances.get(echeances.size() - 1).getDateEcheance());
+
+    List<LigneAnneeDTO> lignes = new ArrayList<>();
+    for (int annee = debut.getYear(); annee <= fin.getYear(); annee++) {
+        List<CelluleMoisDTO> mois = new ArrayList<>();
+        for (int m = 1; m <= 12; m++) {
+            YearMonth courant = YearMonth.of(annee, m);
+            boolean dansPeriode = !courant.isBefore(debut) && !courant.isAfter(fin);
+            Echeance e = parMois.get(courant);
+
+            if (!dansPeriode || e == null) {
+                mois.add(new CelluleMoisDTO(MOIS_LABELS[m - 1], dansPeriode, null, null, "#FFFFFF"));
+                continue;
+            }
+
+            // Rouge UNIQUEMENT si le statut est réellement EN_RETARD ou IMPAYE.
+            // A_VENIR reste vert/neutre : ce n'est pas un retard tant que l'échéance n'est pas dépassée.
+            boolean enIncident = e.getStatut() == StatutEcheance.EN_RETARD || e.getStatut() == StatutEcheance.IMPAYE;
+            String couleur = enIncident ? "#E53935" : "#4CAF50";
+
+            // Le montant ne s'affiche QUE s'il a réellement été remboursé ce mois (sinon case vide).
+            mois.add(new CelluleMoisDTO(MOIS_LABELS[m - 1], true, e.getMontantPaye(), e.getStatut().name(), couleur));
+        }
+        lignes.add(new LigneAnneeDTO(annee, mois));
+    }
+
+    return new CalendrierCreditDTO(contrat.getCodeContratCb(), contrat.getTypeContrat(), contrat.getMontantFinance(), lignes);
+}
 }

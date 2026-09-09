@@ -49,10 +49,12 @@ public class RapportService {
         List<IdentifiantDTO> identifiants = client.getIdentifiants().stream()
                 .map(i -> new IdentifiantDTO(i.getTypeIdentifiant(), i.getNumero())).toList();
 
-        List<CalendrierCreditDTO> calendriers = tousContrats.stream()
-                .map(calendrierService::construire)
-                .filter(c -> !c.lignes().isEmpty())
-                .toList();
+        // AVANT : List<CalendrierCreditDTO> calendriers = tousContrats.stream()...
+// APRÈS : uniquement l'historique (jamais le contrat en cours de demande) :
+List<CalendrierCreditDTO> calendriers = historique.stream()
+        .map(calendrierService::construire)
+        .filter(c -> !c.lignes().isEmpty())
+        .toList();
 
         return new RapportSolvabiliteResponse(
                 UUID.randomUUID().toString(),

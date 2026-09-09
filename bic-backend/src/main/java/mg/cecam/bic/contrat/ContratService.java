@@ -25,6 +25,14 @@ public class ContratService {
     private final EcheanceRepository echeanceRepository;
 
     @Transactional
+public Contrat changerPhase(Long contratId, PhaseDemande nouvellePhase) {
+    Contrat c = contratRepository.findById(contratId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Contrat introuvable"));
+    c.setPhaseDemande(nouvellePhase);
+    return contratRepository.save(c);
+}
+
+    @Transactional
     public Contrat creerDemande(ContratRequest request) {
         Client client = clientRepository.findById(request.clientId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client introuvable : " + request.clientId()));

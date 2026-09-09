@@ -6,4 +6,9 @@ export const contratApi = {
     const { data } = await axiosClient.post<ContratResponse>("/contrats", payload);
     return data;
   },
+  listerParClient: async (clientId: number) => {
+  const { data } = await axiosClient.get<import("@/types/contrat").ContratResponse[]>("/contrats", { params: { clientId } });
+  return data;
+},
 };
+

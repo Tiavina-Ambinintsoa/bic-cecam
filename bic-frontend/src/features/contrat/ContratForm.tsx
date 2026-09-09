@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,11 @@ export function ContratForm() {
       devise: "Ariary malgache",
     },
   });
+
+  // useWatch (plutôt que form.watch()) permet au React Compiler de mémoïser
+  // ce composant : form.watch() renvoie une fonction non stable qui fait
+  // sauter la mémoïsation ("Use of incompatible library").
+  const modeRattachement = useWatch({ control: form.control, name: "modeRattachement" });
 
   async function onSubmit(values: ContratFormValues) {
     if (!clientId) return;
@@ -67,6 +72,14 @@ export function ContratForm() {
             </RadioGroup>
           </div>
 
+          {modeRattachement === "DEMANDE_EXISTANTE" && (
+            <div className="space-y-1.5">
+              <Label>Code Client CB <span className="text-red-500">*</span></Label>
+              <Input {...form.register("codeClientCbCible")} placeholder="Ex : L00190003" />
+              {form.formState.errors.codeClientCbCible && <p className="text-sm text-red-500">{form.formState.errors.codeClientCbCible.message}</p>}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Type de contrat <span className="text-red-500">*</span></Label>
@@ -79,9 +92,9 @@ export function ContratForm() {
             </div>
 
             <div className="space-y-1.5">
-  <Label>Type de relation avec l'entreprise</Label>
-  <Input className="h-10" {...form.register("typeRelationEntreprise")} />
-</div>
+              <Label>Type de relation avec l'entreprise</Label>
+              <Input className="h-10" {...form.register("typeRelationEntreprise")} />
+            </div>
 
             <div className="space-y-1.5">
               <Label>Rôle Client <span className="text-red-500">*</span></Label>

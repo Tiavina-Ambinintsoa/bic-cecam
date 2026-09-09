@@ -25,9 +25,11 @@ export interface CelluleMois { mois: string; dansPeriode: boolean; montant?: num
 export interface LigneAnnee { annee: number; mois: CelluleMois[]; }
 export interface CalendrierCredit { codeContratCb: string; typeContrat: string; montantFinance: number; lignes: LigneAnnee[]; }
 
+export interface GrilleScoreItem { intervalle: string; categorieRisque: string; couleurHex: string; }
+
 export interface RapportSolvabilite {
   identifiantRapport: string; dateRequete: string; statutClient: string; codeClientCb: string;
   client: ClientInfo; adressesActuelles: Adresse[]; adressesHistoriques: Adresse[];
   identifiants: Identifiant[]; detailDemande: DetailDemande;
-  score: Score; synthese: Synthese; calendriers: CalendrierCredit[];
+  score: Score; grille: GrilleScoreItem[]; synthese: Synthese; calendriers: CalendrierCredit[];
 }
