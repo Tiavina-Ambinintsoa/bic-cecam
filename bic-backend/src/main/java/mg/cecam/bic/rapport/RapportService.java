@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import mg.cecam.bic.client.Adresse;
 import mg.cecam.bic.client.Client;
 import mg.cecam.bic.common.enums.PhaseDemande;
+import mg.cecam.bic.common.util.LabelMapper;
 import mg.cecam.bic.common.util.ScoreColorMapper;
 import mg.cecam.bic.contrat.Contrat;
 import mg.cecam.bic.contrat.ContratRepository;
@@ -27,6 +28,7 @@ public class RapportService {
 
     private final ContratRepository contratRepository;
     private final ScoreService scoreService;
+    private final CalendrierService calendrierService;
 
     public RapportSolvabiliteResponse construire(Long contratId) {
         Contrat contrat = contratRepository.findById(contratId)
@@ -40,12 +42,16 @@ public class RapportService {
         ScoreResult scoreResult = scoreService.calculer(client, contrat);
 
         List<AdresseDTO> actuelles = client.getAdresses().stream()
-                .filter(Adresse::getActuelle)
-                .map(a -> new AdresseDTO(a.getTypeAdresse(), a.getAdresseComplete()))
-                .toList();
+                .filter(Adresse::getActuelle).map(this::toAdresseDto).toList();
         List<AdresseDTO> historiques = client.getAdresses().stream()
-                .filter(a -> !a.getActuelle())
-                .map(a -> new AdresseDTO(a.getTypeAdresse(), a.getAdresseComplete()))
+                .filter(a -> !a.getActuelle()).map(this::toAdresseDto).toList();
+
+        List<IdentifiantDTO> identifiants = client.getIdentifiants().stream()
+                .map(i -> new IdentifiantDTO(i.getTypeIdentifiant(), i.getNumero())).toList();
+
+        List<CalendrierCreditDTO> calendriers = tousContrats.stream()
+                .map(calendrierService::construire)
+                .filter(c -> !c.lignes().isEmpty())
                 .toList();
 
         return new RapportSolvabiliteResponse(
@@ -56,25 +62,47 @@ public class RapportService {
                 toClientInfoDto(client),
                 actuelles,
                 historiques,
-                null,        // Emploi : aucune saisie disponible pour l'instant (cf. cahier des charges §5.4.3)
-                List.of(),   // Liens entre clients : idem
+                identifiants,
+                toDetailDemandeDto(contrat),
+                null,       // Emploi : pas de saisie disponible pour l'instant
+                List.of(),  // Liens entre clients : idem
                 toScoreDto(scoreResult),
-                construireSynthese(historique)
+                construireSynthese(historique),
+                calendriers
         );
     }
 
     private ClientInfoDTO toClientInfoDto(Client c) {
         return new ClientInfoDTO(
-                c.getTitre(), (c.getPrenom() + " " + c.getNom()).trim(), c.getPrenom(), c.getDeuxiemePrenom(), c.getNom(),
-                c.getDateNaissance(), c.getVilleNaissance(), c.getPaysNaissance(),
-                c.getGenre().name(), c.getNationalite(), c.getEtatCivil(), c.getCategorieTiersCode()
+                blankToDash(c.getTitre()), (c.getPrenom() + " " + c.getNom()).trim(),
+                c.getPrenom(), blankToDash(c.getDeuxiemePrenom()), c.getNom(),
+                c.getDateNaissance(), blankToDash(c.getVilleNaissance()), blankToDash(c.getPaysNaissance()),
+                c.getGenre().name(), c.getNationalite(), blankToDash(c.getEtatCivil()),
+                c.getCategorieTiersCode(), c.getDateDerniereModification()
+        );
+    }
+
+    private AdresseDTO toAdresseDto(Adresse a) {
+        return new AdresseDTO(
+                a.getTypeAdresse(), a.getAdresseComplete(),
+                blankToDash(a.getNumeroRue()), blankToDash(a.getCodePostal()),
+                blankToDash(a.getVille()), blankToDash(a.getCommune()),
+                blankToDash(a.getRegion()), blankToDash(a.getPays()),
+                a.getDateDerniereModification()
+        );
+    }
+
+    private DetailDemandeDTO toDetailDemandeDto(Contrat c) {
+        return new DetailDemandeDTO(
+                c.getCodeContratCb(), LabelMapper.role(c.getRoleClient()), blankToDash(c.getTypeRelationEntreprise()),
+                c.getTypeContrat(), LabelMapper.phase(c.getPhaseDemande()), c.getDevise(),
+                blankToDash(c.getPeriodicitePaiement()), c.getMontantFinance(), c.getMontantEcheanceMensuelle(),
+                c.getNombreTotalEcheances(), c.getDateDemande()
         );
     }
 
     private ScoreDTO toScoreDto(ScoreResult r) {
-        if (!r.calculable()) {
-            return new ScoreDTO(false, null, null, null, null, null, r.message());
-        }
+        if (!r.calculable()) return new ScoreDTO(false, null, null, null, null, null, r.message());
         return new ScoreDTO(true, r.valeur(), r.intervalle(), r.categorieRisque(), r.couleur(), ScoreColorMapper.toHex(r.couleur()), null);
     }
 
@@ -97,15 +125,8 @@ public class RapportService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new SyntheseDTO(
-                historique.size(),
-                0,   // Nombre d'établissements déclarants : nécessite un réseau multi-établissements, non modélisé ici
-                "-",
-                "Ariary malgache",
-                "-",
-                montantTotalRestantDu,
-                BigDecimal.ZERO,
-                historique.size(),
-                BigDecimal.ZERO,
+                historique.size(), 0, "-", "Ariary malgache", "-",
+                montantTotalRestantDu, BigDecimal.ZERO, historique.size(), BigDecimal.ZERO,
                 List.of(
                         financementsAvecEcheancier,
                         new RepartitionLigneDTO("Financements sans Échéancier", 0, 0, 0, 0, 0),
@@ -113,5 +134,9 @@ public class RapportService {
                         new RepartitionLigneDTO("Services", 0, 0, 0, 0, 0)
                 )
         );
+    }
+
+    private String blankToDash(String v) {
+        return (v == null || v.isBlank()) ? "-" : v;
     }
 }

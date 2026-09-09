@@ -1,5 +1,18 @@
 export type Genre = "FEMME" | "HOMME";
 
+export interface AdresseRequest {
+  typeAdresse: string;
+  adresseComplete: string;
+  numeroRue?: string;
+  codePostal?: string;
+  ville?: string;
+  commune?: string;
+  region?: string;
+  pays?: string;
+}
+
+export interface IdentifiantRequest { typeIdentifiant: string; numero: string; }
+
 export interface ClientRequest {
   titre?: string;
   categorieTiersCode: string;
@@ -12,8 +25,8 @@ export interface ClientRequest {
   genre: Genre;
   nationalite: string;
   etatCivil?: string;
-  adresses: { typeAdresse: string; adresseComplete: string }[];
-  identifiants: { typeIdentifiant: string; numero: string }[];
+  adresses: AdresseRequest[];
+  identifiants: IdentifiantRequest[];
 }
 
 export interface ClientResponse extends ClientRequest {

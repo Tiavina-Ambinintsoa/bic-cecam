@@ -4,12 +4,16 @@ import lombok.RequiredArgsConstructor;
 import mg.cecam.bic.client.Client;
 import mg.cecam.bic.client.ClientRepository;
 import mg.cecam.bic.common.enums.PhaseDemande;
+import mg.cecam.bic.common.enums.StatutEcheance;
 import mg.cecam.bic.contrat.dto.ContratRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -18,6 +22,7 @@ public class ContratService {
 
     private final ContratRepository contratRepository;
     private final ClientRepository clientRepository;
+    private final EcheanceRepository echeanceRepository;
 
     @Transactional
     public Contrat creerDemande(ContratRequest request) {
@@ -29,6 +34,7 @@ public class ContratService {
                 .client(client)
                 .modeRattachement(request.modeRattachement())
                 .typeContrat(request.typeContrat())
+                .typeRelationEntreprise(request.typeRelationEntreprise())
                 .roleClient(request.roleClient())
                 .dateDemande(request.dateDemande())
                 .montantFinance(request.montantFinance())
@@ -39,11 +45,31 @@ public class ContratService {
                 .phaseDemande(PhaseDemande.DEMANDE_EN_COURS)
                 .build();
 
-        return contratRepository.save(contrat);
+        contrat = contratRepository.save(contrat);
+        genererEcheances(contrat);
+        return contrat;
     }
 
     public List<Contrat> listerParClient(Long clientId) {
         return contratRepository.findByClient_Id(clientId);
+    }
+
+    private void genererEcheances(Contrat contrat) {
+        BigDecimal montantParEcheance = contrat.getMontantEcheanceMensuelle() != null
+                ? contrat.getMontantEcheanceMensuelle()
+                : contrat.getMontantFinance().divide(BigDecimal.valueOf(contrat.getNombreTotalEcheances()), 2, RoundingMode.HALF_UP);
+
+        List<Echeance> echeances = new ArrayList<>();
+        for (int i = 1; i <= contrat.getNombreTotalEcheances(); i++) {
+            echeances.add(Echeance.builder()
+                    .contrat(contrat)
+                    .numeroEcheance(i)
+                    .dateEcheance(contrat.getDateDemande().plusMonths(i))
+                    .montantDu(montantParEcheance)
+                    .statut(StatutEcheance.A_VENIR)
+                    .build());
+        }
+        echeanceRepository.saveAll(echeances);
     }
 
     private String genererCodeContratCb() {

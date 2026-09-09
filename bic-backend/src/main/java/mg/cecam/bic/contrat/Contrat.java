@@ -55,6 +55,9 @@ public class Contrat {
     @Column(name = "montant_echeance_mensuelle")
     private BigDecimal montantEcheanceMensuelle;
 
+    @Column(name = "type_relation_entreprise")
+    private String typeRelationEntreprise;
+
     @NotNull @Positive
     @Column(name = "nombre_total_echeances", nullable = false)
     private Integer nombreTotalEcheances;

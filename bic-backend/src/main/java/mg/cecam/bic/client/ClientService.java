@@ -32,7 +32,17 @@ public class ClientService {
                 .build();
 
         List<Adresse> adresses = request.adresses().stream()
-                .map(a -> Adresse.builder().client(client).typeAdresse(a.typeAdresse()).adresseComplete(a.adresseComplete()).build())
+                .map(a -> Adresse.builder()
+                        .client(client)
+                        .typeAdresse(a.typeAdresse())
+                        .adresseComplete(a.adresseComplete())
+                        .numeroRue(a.numeroRue())
+                        .codePostal(a.codePostal())
+                        .ville(a.ville())
+                        .commune(a.commune())
+                        .region(a.region())
+                        .pays(a.pays())
+                        .build())
                 .collect(Collectors.toList());
         client.setAdresses(adresses);
 

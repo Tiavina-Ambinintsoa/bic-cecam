@@ -79,6 +79,11 @@ export function ContratForm() {
             </div>
 
             <div className="space-y-1.5">
+  <Label>Type de relation avec l'entreprise</Label>
+  <Input className="h-10" {...form.register("typeRelationEntreprise")} />
+</div>
+
+            <div className="space-y-1.5">
               <Label>Rôle Client <span className="text-red-500">*</span></Label>
               <Select onValueChange={(v) => form.setValue("roleClient", v as RoleClient, { shouldValidate: true })}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>

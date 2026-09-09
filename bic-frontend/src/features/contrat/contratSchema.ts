@@ -3,6 +3,7 @@ import { z } from "zod";
 export const contratSchema = z.object({
   modeRattachement: z.enum(["NOUVELLE_DEMANDE", "DEMANDE_EXISTANTE", "ENTREPRISE"]),
   typeContrat: z.string().min(1, "Le type de contrat est requis"),
+  typeRelationEntreprise: z.string().optional(),
   roleClient: z.enum(["TITULAIRE", "CO_TITULAIRE", "GARANT"], { message: "Le rôle client est requis" }),
   dateDemande: z.string().min(1, "La date de la demande est requise"),
   montantFinance: z.coerce.number().positive("Le montant doit être positif"),

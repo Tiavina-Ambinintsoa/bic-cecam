@@ -23,6 +23,16 @@ public record ClientRequest(
         @Valid @NotNull List<AdresseRequest> adresses,
         @Valid @NotNull List<IdentifiantRequest> identifiants
 ) {
-    public record AdresseRequest(@NotBlank String typeAdresse, @NotBlank String adresseComplete) {}
+    public record AdresseRequest(
+            @NotBlank String typeAdresse,
+            @NotBlank String adresseComplete,
+            String numeroRue,
+            String codePostal,
+            String ville,
+            String commune,
+            String region,
+            String pays
+    ) {}
+
     public record IdentifiantRequest(@NotBlank String typeIdentifiant, @NotBlank String numero) {}
 }

@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+const adresseSchema = z.object({
+  typeAdresse: z.string().min(1),
+  adresseComplete: z.string().min(1, "Adresse requise"),
+  numeroRue: z.string().optional(),
+  codePostal: z.string().optional(),
+  ville: z.string().optional(),
+  commune: z.string().optional(),
+  region: z.string().optional(),
+  pays: z.string().optional(),
+});
+
 export const clientSchema = z.object({
   titre: z.string().optional(),
   categorieTiersCode: z.string().min(1, "La catégorie tiers est requise"),
@@ -12,12 +23,8 @@ export const clientSchema = z.object({
   genre: z.enum(["FEMME", "HOMME"], { message: "Le genre est requis" }),
   nationalite: z.string().min(1, "La nationalité est requise"),
   etatCivil: z.string().optional(),
-  adresses: z
-    .array(z.object({ typeAdresse: z.string().min(1), adresseComplete: z.string().min(1, "Adresse requise") }))
-    .min(1),
-  identifiants: z
-    .array(z.object({ typeIdentifiant: z.string().min(1), numero: z.string().min(1, "Numéro requis") }))
-    .min(1),
+  adresses: z.array(adresseSchema).min(1),
+  identifiants: z.array(z.object({ typeIdentifiant: z.string().min(1), numero: z.string().min(1, "Numéro requis") })).min(1),
 });
 
 export type ClientFormValues = z.infer<typeof clientSchema>;

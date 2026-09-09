@@ -12,6 +12,7 @@ export interface ContratRequest {
   nombreTotalEcheances: number;
   devise: string;
   periodicitePaiement?: string;
+  typeRelationEntreprise?: string;
 }
 
 export interface ContratResponse extends ContratRequest {

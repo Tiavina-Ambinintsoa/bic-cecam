@@ -27,9 +27,10 @@ public class RapportController {
 
     @GetMapping(value = "/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> obtenirPdf(@PathVariable Long contratId) {
-        byte[] pdf = rapportPdfService.genererPdf(rapportService.construire(contratId));
+        RapportSolvabiliteResponse rapport = rapportService.construire(contratId);
+        byte[] pdf = rapportPdfService.genererPdf(rapport);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=rapport-solvabilite.pdf")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=rapport-solvabilite-" + rapport.codeClientCb() + ".pdf")
                 .body(pdf);
     }
 }
