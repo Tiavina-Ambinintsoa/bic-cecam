@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Entity
-@Table(name = "identifiant")
+@Table(name = "identifiant", uniqueConstraints = @UniqueConstraint(name = "uq_identifiant_type_numero", columnNames = {"type_identifiant", "numero"}))
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Identifiant {
 

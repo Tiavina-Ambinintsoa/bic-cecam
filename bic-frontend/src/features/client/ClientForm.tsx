@@ -35,8 +35,7 @@ export function ClientForm() {
   async function onSubmit(values: ClientFormValues) {
     setSubmitting(true);
     try {
-      const { client, clientTrouve } = await clientApi.creer(values);
-      if (clientTrouve) window.alert(`Client déjà connu (${client.codeClientCb}) — historique existant repris.`);
+      const { client } = await clientApi.creer(values);
       navigate(`/demande/nouvelle/contrat/${client.id}`);
     } finally {
       setSubmitting(false);

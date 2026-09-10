@@ -13,19 +13,33 @@ function buildMailHref(rapport: RapportSolvabilite, contratId: string) {
   return `mailto:?subject=${subject}&body=${body}`;
 }
 
+type RapportState = {
+  contratId: string;
+  rapport: RapportSolvabilite | null;
+  erreur: string | null;
+};
+
 export function RapportPage() {
   const { contratId } = useParams<{ contratId: string }>();
-  const [rapport, setRapport] = useState<RapportSolvabilite | null>(null);
-  const [erreur, setErreur] = useState<string | null>(null);
+
+  const [state, setState] = useState<RapportState>({ contratId: "", rapport: null, erreur: null });
 
   useEffect(() => {
     if (!contratId) return;
-    setErreur(null);
-    setRapport(null);
     rapportApi.obtenir(Number(contratId))
-      .then(setRapport)
-      .catch(() => setErreur("Aucune demande trouvée pour cet identifiant. Vérifiez que c'est bien un ID de contrat (pas un ID client)."));
+      .then((data) => setState({ contratId, rapport: data, erreur: null }))
+      .catch(() =>
+        setState({
+          contratId,
+          rapport: null,
+          erreur: "Aucune demande trouvée pour cet identifiant. Vérifiez que c'est bien un ID de contrat (pas un ID client).",
+        })
+      );
   }, [contratId]);
+
+  const chargementEnCours = state.contratId !== contratId;
+  const rapport = chargementEnCours ? null : state.rapport;
+  const erreur = chargementEnCours ? null : state.erreur;
 
   if (erreur) return <div className="mx-auto max-w-xl p-6 text-red-600">{erreur}</div>;
   if (!rapport) return <div className="mx-auto max-w-3xl p-6 text-slate-500">Chargement du rapport...</div>;
@@ -72,16 +86,16 @@ export function RapportPage() {
                   <p><span className="text-slate-500">Catégorie de score : </span><span className="font-semibold">{rapport.score.categorieRisque}</span></p>
                 </div>
                 <div className="flex items-end gap-2">
-                  {rapport.grille.map((g) => {
-                    const actif = g.intervalle === rapport.score.intervalle;
-                    return (
-                      <div key={g.intervalle} className="flex flex-col items-center gap-1">
-                        <div className="rounded-lg transition-all" style={{ backgroundColor: g.couleurHex, width: actif ? 40 : 26, height: actif ? 40 : 26 }} />
-                        <span className={cn("text-xs", actif ? "font-bold text-slate-900" : "text-slate-400")}>{g.intervalle}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+  {(rapport.grille ?? []).map((g) => {
+    const actif = g.intervalle === rapport.score.intervalle;
+    return (
+      <div key={g.intervalle} className="flex flex-col items-center gap-1">
+        <div className="rounded-lg transition-all" style={{ backgroundColor: g.couleurHex, width: actif ? 40 : 26, height: actif ? 40 : 26 }} />
+        <span className={cn("text-xs", actif ? "font-bold text-slate-900" : "text-slate-400")}>{g.intervalle}</span>
+      </div>
+    );
+  })}
+</div>
               </div>
             ) : (
               <p className="text-sm text-slate-500">Le score n'est pas calculé : {rapport.score.message}</p>
@@ -115,7 +129,7 @@ export function RapportPage() {
             <table className="w-full text-left text-xs">
               <thead><tr className="border-b text-slate-500"><th className="py-1">Catégorie</th><th>Demandé</th><th>Refusé</th><th>Abandonné</th><th>Actif</th><th>Fermé</th></tr></thead>
               <tbody>
-                {rapport.synthese.repartition.map((l) => (
+                {(rapport.synthese.repartition ?? []).map((l) => (
                   <tr key={l.categorie} className="border-b last:border-0"><td className="py-1">{l.categorie}</td><td>{l.demande}</td><td>{l.refuse}</td><td>{l.abandonne}</td><td>{l.actif}</td><td>{l.ferme}</td></tr>
                 ))}
               </tbody>
@@ -123,11 +137,11 @@ export function RapportPage() {
           </CardContent>
         </Card>
 
-        {rapport.calendriers.length > 0 && (
+        {(rapport.calendriers ?? []).length > 0 && (
           <Card className="lg:col-span-2">
             <CardHeader><CardTitle>Calendrier de remboursement</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              {rapport.calendriers.map((cal, i) => (
+              {(rapport.calendriers ?? []).map((cal, i) => (
                 <div key={i}>
                   <p className="mb-2 text-sm font-medium">Contrat {cal.codeContratCb} — {cal.typeContrat} ({cal.montantFinance} Ar)</p>
                   <table className="w-full border-collapse text-center text-xs">

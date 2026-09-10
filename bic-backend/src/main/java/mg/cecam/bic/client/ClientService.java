@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -17,24 +16,22 @@ public class ClientService {
     private final ClientRepository clientRepository;
 
     @Transactional
-    public ClientEnregistrementResponse enregistrerOuRecuperer(ClientRequest request) {
-        String cin = request.identifiants().stream()
-                .filter(i -> "CIN".equalsIgnoreCase(i.typeIdentifiant()))
-                .map(ClientRequest.IdentifiantRequest::numero)
-                .findFirst()
-                .orElse(null);
+public ClientEnregistrementResponse enregistrerOuRecuperer(ClientRequest request) {
+    String cin = request.identifiants().stream()
+            .filter(i -> "CIN".equalsIgnoreCase(i.typeIdentifiant()))
+            .map(ClientRequest.IdentifiantRequest::numero)
+            .findFirst()
+            .orElse(null);
 
-        if (cin != null) {
-            Optional<Client> existant = clientRepository.findByIdentifiants_NumeroAndIdentifiants_TypeIdentifiant(cin, "CIN");
-            if (existant.isPresent()) {
-                // Client déjà connu : on NE modifie PAS ses informations existantes.
-                // Un seul code_client_cb reste attaché à ce CIN pour toute sa vie.
-                return new ClientEnregistrementResponse(existant.get(), true);
-            }
+    if (cin != null) {
+        List<Client> existants = clientRepository.findAllByIdentifiants_NumeroAndIdentifiants_TypeIdentifiant(cin, "CIN");
+        if (!existants.isEmpty()) {
+            return new ClientEnregistrementResponse(existants.get(0), true);
         }
-
-        return new ClientEnregistrementResponse(creerClient(request), false);
     }
+
+    return new ClientEnregistrementResponse(creerClient(request), false);
+}
 
     private Client creerClient(ClientRequest request) {
         Client client = Client.builder()
@@ -70,10 +67,12 @@ public class ClientService {
     }
 
     public Client rechercherParIdentifiant(String typeIdentifiant, String numero) {
-        return clientRepository
-                .findByIdentifiants_NumeroAndIdentifiants_TypeIdentifiant(numero, typeIdentifiant)
-                .orElse(null);
-    }
+    return clientRepository
+            .findAllByIdentifiants_NumeroAndIdentifiants_TypeIdentifiant(numero, typeIdentifiant)
+            .stream()
+            .findFirst()
+            .orElse(null);
+}
 
     private String genererCodeClientCb() {
         return "L" + String.format("%08d", (long) (Math.random() * 100_000_000));

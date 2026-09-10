@@ -9,6 +9,8 @@ import mg.cecam.bic.common.util.ScoreColorMapper;
 import mg.cecam.bic.contrat.Contrat;
 import mg.cecam.bic.contrat.ContratRepository;
 import mg.cecam.bic.rapport.dto.*;
+import mg.cecam.bic.referentiel.GrilleScore;
+import mg.cecam.bic.referentiel.GrilleScoreRepository;
 import mg.cecam.bic.score.ScoreResult;
 import mg.cecam.bic.score.ScoreService;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +32,7 @@ public class RapportService {
     private final ContratRepository contratRepository;
     private final ScoreService scoreService;
     private final CalendrierService calendrierService;
+    private final GrilleScoreRepository grilleScoreRepository;
 
     public RapportSolvabiliteResponse construire(Long contratId) {
         Contrat contrat = contratRepository.findById(contratId)
@@ -49,12 +53,15 @@ public class RapportService {
         List<IdentifiantDTO> identifiants = client.getIdentifiants().stream()
                 .map(i -> new IdentifiantDTO(i.getTypeIdentifiant(), i.getNumero())).toList();
 
-        // AVANT : List<CalendrierCreditDTO> calendriers = tousContrats.stream()...
-// APRÈS : uniquement l'historique (jamais le contrat en cours de demande) :
-List<CalendrierCreditDTO> calendriers = historique.stream()
-        .map(calendrierService::construire)
-        .filter(c -> !c.lignes().isEmpty())
-        .toList();
+        List<CalendrierCreditDTO> calendriers = historique.stream()
+                .map(calendrierService::construire)
+                .filter(c -> !c.lignes().isEmpty())
+                .toList();
+
+        List<GrilleScoreDTO> grille = grilleScoreRepository.findAll().stream()
+                .sorted(Comparator.comparing(GrilleScore::getIntervalle).reversed()) // E,D,C,B,A
+                .map(g -> new GrilleScoreDTO(g.getIntervalle(), g.getCategorieRisque(), ScoreColorMapper.toHex(g.getCouleur())))
+                .toList();
 
         return new RapportSolvabiliteResponse(
                 UUID.randomUUID().toString(),
@@ -66,9 +73,10 @@ List<CalendrierCreditDTO> calendriers = historique.stream()
                 historiques,
                 identifiants,
                 toDetailDemandeDto(contrat),
-                null,       // Emploi : pas de saisie disponible pour l'instant
+                null,       // Emploi : pas encore de saisie disponible
                 List.of(),  // Liens entre clients : idem
                 toScoreDto(scoreResult),
+                grille,
                 construireSynthese(historique),
                 calendriers
         );
