@@ -16,6 +16,16 @@ public class ClientController {
 
     private final ClientService clientService;
 
+    @PutMapping("/{id}")
+public ResponseEntity<Client> mettreAJour(@PathVariable Long id, @Valid @RequestBody ClientRequest request) {
+    return ResponseEntity.ok(clientService.mettreAJour(id, request));
+}
+
+@PostMapping("/{id}/adresses")
+public ResponseEntity<Adresse> ajouterAdresse(@PathVariable Long id, @RequestBody ClientRequest.AdresseRequest request) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(clientService.ajouterAdresse(id, request));
+}
+
     @PostMapping
 public ResponseEntity<ClientEnregistrementResponse> creer(@Valid @RequestBody ClientRequest request) {
     ClientEnregistrementResponse result = clientService.enregistrerOuRecuperer(request);

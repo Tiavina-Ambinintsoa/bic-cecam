@@ -5,8 +5,14 @@ import { ClientForm } from "@/features/client/ClientForm";
 import { ContratForm } from "@/features/contrat/ContratForm";
 import { RapportPage } from "@/pages/RapportPage";
 import { RechercheIndividuPage } from "@/pages/RechercheIndividuPage";
-import { ModifierDemandePage } from "@/pages/ModifierDemandePage";
 import { AlertesPage } from "@/pages/AlertesPage";
+import { ModifierClientPage } from "@/pages/ModifierClientPage";
+import { useParams } from "react-router-dom";
+
+function RapportPageRoute() {
+  const { contratId } = useParams();
+  return <RapportPage key={contratId} />;
+}
 
 export default function App() {
   return (
@@ -17,9 +23,9 @@ export default function App() {
           <Route path="/" element={<HomeMenu />} />
           <Route path="/demande/nouvelle/individu" element={<ClientForm />} />
           <Route path="/demande/nouvelle/contrat/:clientId" element={<ContratForm />} />
-          <Route path="/demande/rapport/:contratId" element={<RapportPage />} />
+          <Route path="/demande/rapport/:contratId" element={<RapportPageRoute />} />
           <Route path="/recherche/individu" element={<RechercheIndividuPage />} />
-          <Route path="/demande/modifier" element={<ModifierDemandePage />} />
+          <Route path="/demande/modifier" element={<ModifierClientPage />} />
           <Route path="/alertes" element={<AlertesPage />} />
         </Routes>
       </div>

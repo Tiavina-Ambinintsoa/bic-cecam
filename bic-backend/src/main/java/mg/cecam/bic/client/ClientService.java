@@ -3,8 +3,11 @@ package mg.cecam.bic.client;
 import lombok.RequiredArgsConstructor;
 import mg.cecam.bic.client.dto.ClientEnregistrementResponse;
 import mg.cecam.bic.client.dto.ClientRequest;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,6 +17,37 @@ import java.util.stream.Collectors;
 public class ClientService {
 
     private final ClientRepository clientRepository;
+
+    @Transactional
+public Client mettreAJour(Long id, ClientRequest request) {
+    Client client = clientRepository.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client introuvable"));
+    client.setTitre(request.titre());
+    client.setPrenom(request.prenom());
+    client.setDeuxiemePrenom(request.deuxiemePrenom());
+    client.setNom(request.nom());
+    client.setDateNaissance(request.dateNaissance());
+    client.setVilleNaissance(request.villeNaissance());
+    client.setPaysNaissance(request.paysNaissance());
+    client.setGenre(request.genre());
+    client.setNationalite(request.nationalite());
+    client.setEtatCivil(request.etatCivil());
+    return clientRepository.save(client);
+}
+
+@Transactional
+public Adresse ajouterAdresse(Long clientId, ClientRequest.AdresseRequest req) {
+    Client client = clientRepository.findById(clientId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Client introuvable"));
+    Adresse adresse = Adresse.builder()
+            .client(client).typeAdresse(req.typeAdresse()).adresseComplete(req.adresseComplete())
+            .numeroRue(req.numeroRue()).codePostal(req.codePostal()).ville(req.ville())
+            .commune(req.commune()).region(req.region()).pays(req.pays())
+            .build();
+    clientRepository.save(client); // cascade ALL sur la relation persiste la nouvelle adresse
+    client.getAdresses().add(adresse);
+    return adresse;
+}
 
     @Transactional
 public ClientEnregistrementResponse enregistrerOuRecuperer(ClientRequest request) {

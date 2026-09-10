@@ -17,9 +17,16 @@ export interface DetailDemande {
 export interface Score { calculable: boolean; valeur?: number; intervalle?: string; categorieRisque?: string; couleurHex?: string; message?: string; }
 export interface RepartitionLigne { categorie: string; demande: number; refuse: number; abandonne: number; actif: number; ferme: number; }
 export interface Synthese {
-  nombreTotalContrat: number; nombreEtablissementsDeclarants: number; contratManquantReciprocite: string;
-  devise: string; expositionPotentielle: string; montantTotalRestantDu: number;
-  montantTotalDemandes: number; totalGarantieSignature: number; repartition: RepartitionLigne[];
+  nombreTotalContrat: number;
+  nombreEtablissementsDeclarants: number;
+  contratManquantReciprocite: string;
+  devise: string;
+  expositionPotentielle: number;
+  montantTotalRestantDu: number;
+  montantTotalImpayes: number;
+  montantTotalDemandes: number;
+  totalGarantieSignature: number;
+  repartition: RepartitionLigne[];
 }
 export interface CelluleMois { mois: string; dansPeriode: boolean; montant?: number; statut?: string; couleurHex: string; }
 export interface LigneAnnee { annee: number; mois: CelluleMois[]; }
